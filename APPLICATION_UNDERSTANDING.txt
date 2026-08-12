@@ -1,0 +1,363 @@
+================================================================================
+DOC CHAT (pdf-chat) — COMPLETE APPLICATION UNDERSTANDING
+================================================================================
+Location: pdf-chat/
+Purpose: Upload ONE document, index it, then chat with grounded answers and
+         citations. Optional CLIP retrieval shows figure pages for visual
+         questions.
+
+This file explains what the app is, how it works end-to-end, every major
+module, configuration, data flow, and how to run/test it.
+
+
+--------------------------------------------------------------------------------
+1. PRODUCT SUMMARY
+--------------------------------------------------------------------------------
+
+Job to be done:
+  "I have a document. I want to ask questions and get answers grounded in that
+   document, with citations."
+
+Scope (v1):
+  - One file at a time (new upload replaces the previous index)
+  - Formats: .pdf, .txt, .md/.markdown, .csv, .docx
+  - PDF: native text + OCR for scanned/low-text pages + figure-page CLIP index
+  - Chat UI: Chainlit
+  - Optional REST API: FastAPI
+
+Not in scope:
+  - Multi-doc libraries / multi-user auth
+  - Legacy .doc, Excel (.xlsx), standalone image uploads as primary docs
+  - Cloud vector DB / rerankers
+  - Perfect OCR or perfect figure understanding
+
+
+--------------------------------------------------------------------------------
+2. HIGH-LEVEL ARCHITECTURE
+--------------------------------------------------------------------------------
+
+  [User Browser]
+        |
+        v
+  [Chainlit UI]  app_ui.py          optional: [FastAPI] app/api.py
+        |                                   |
+        +----------------+------------------+
+                         |
+                         v
+              [Ingest Pipeline]  app/ingest/pipeline.py
+                    |
+        +-----------+-----------+
+        |                       |
+        v                       v
+  Text extract/chunk      Figure-page detect/render
+  embed (MiniLM)          CLIP image embed
+        |                       |
+        v                       v
+  Qdrant: pdf_chat         Qdrant: pdf_chat_images
+        |                       |
+        +-----------+-----------+
+                    |
+                    v
+              [RAG Chat]  app/rag/chat.py
+                    |
+                    v
+              Groq LLM (llama-3.3-70b-versatile)
+                    |
+                    v
+              Answer + text Sources (+ inline figure image if visual Q)
+
+
+Supporting infra:
+  - Local embeddings via fastembed (ONNX) — no embedding API needed
+  - Local Qdrant via Docker Compose
+  - Secrets/config via .env + pydantic-settings
+
+
+--------------------------------------------------------------------------------
+3. END-TO-END FLOWS
+--------------------------------------------------------------------------------
+
+3.1 Upload / Ingest
+  1. User opens Chainlit → chat bar locked until upload (AskFileMessage).
+  2. File saved under data/uploads/.
+  3. extract_document() loads text by file type.
+  4. Text is chunked (~1200 chars, 150 overlap) with page/section/row metadata.
+  5. Text chunks embedded with sentence-transformers/all-MiniLM-L6-v2.
+  6. Qdrant text collection is reset and refilled (replace semantics).
+  7. If PDF:
+       - Detect pages that contain figures (bitmaps OR vector drawings)
+       - Render those pages to PNG under data/previews/<name>/clip/
+       - Embed with CLIP vision (Qdrant/clip-ViT-B-32-vision)
+       - Store in Qdrant image collection pdf_chat_images
+  8. UI unlocked for chat.
+
+3.2 Ask a text question
+  1. Embed question with MiniLM.
+  2. Retrieve top-k text chunks from Qdrant.
+  3. Build prompt: system rules + context + question.
+  4. Stream answer from Groq.
+  5. Append **Sources** as plain text at end of the reply.
+  6. No side-panel resource widgets.
+
+3.3 Ask a visual question (figure / diagram / architecture / …)
+  1. Same text RAG as above.
+  2. ALSO embed question with CLIP text encoder.
+  3. Retrieve top figure-page image hits from pdf_chat_images.
+  4. Mention figure pages in Sources text.
+  5. Display matched figure page image(s) inline (not side panel).
+
+
+--------------------------------------------------------------------------------
+4. SUPPORTED FORMATS
+--------------------------------------------------------------------------------
+
+  Extension     Extraction                         Citation unit
+  -----------   --------------------------------   --------------
+  .pdf          pypdf text; OCR fallback; figures  page (p.N)
+  .txt          UTF-8 text, sectioned              section (sec.N)
+  .md           UTF-8 markdown, sectioned          section (sec.N)
+  .csv          header + row groups (~25 rows)     rows (rows.N)
+  .docx         paragraphs + tables (python-docx)  section (sec.N)
+
+PDF OCR:
+  - RapidOCR (onnxruntime) — no system Tesseract required
+  - Used when a page has little native text (< OCR_MIN_CHARS)
+  - Optional OCR of large embedded images on text-heavy pages
+
+PDF figures:
+  - Only pages with figures are CLIP-indexed (not every page)
+  - Detection: large bitmaps and/or substantial vector drawings
+  - Works for any PDF, not a specific paper
+
+
+--------------------------------------------------------------------------------
+5. DIRECTORY MAP
+--------------------------------------------------------------------------------
+
+pdf-chat/
+  APPLICATION_UNDERSTANDING.txt   ← this file
+  README.md                       quick start
+  DECISIONS.md                    locked product/tech decisions
+  requirements.txt
+  docker-compose.yml              Qdrant
+  .env / .env.example             secrets + tunables
+  app_ui.py                       Chainlit entrypoint
+  chainlit.md                     Chainlit welcome markdown
+  .chainlit/config.toml           Chainlit UI/features config
+
+  app/
+    config.py                     Settings (pydantic-settings)
+    api.py                        FastAPI /health /ingest /chat
+
+    ingest/
+      pipeline.py                 ingest_file() orchestration
+      loader.py                   multi-format extract_document()
+      chunker.py                  overlapping character chunks
+      types.py                    PageText unit model
+      text_utils.py               whitespace normalize
+      pdf_loader.py               thin PDF wrapper (compat)
+      ocr.py                      RapidOCR helpers
+      pdf_images.py               render pages, find figure pages
+      image_index.py              CLIP index for figure pages
+
+    rag/
+      embedder.py                 MiniLM text embeddings
+      store.py                    Qdrant text collection
+      chat.py                     retrieve + Groq generate/stream
+      image_embedder.py           CLIP vision + CLIP text
+      image_store.py              Qdrant image collection
+
+  data/
+    uploads/                      runtime uploads (gitignored)
+    previews/                     rendered figure pages (gitignored)
+    qdrant/                       Qdrant storage volume
+    samples/                      ready-to-test documents
+
+  tests/
+    test_chunker.py
+    test_formats.py
+
+
+--------------------------------------------------------------------------------
+6. KEY MODULES (WHAT EACH DOES)
+--------------------------------------------------------------------------------
+
+app/config.py
+  - Loads .env
+  - Groq, Qdrant, embedding models, chunk sizes, OCR + CLIP flags
+  - upload_max_mb property for size limits
+
+app/ingest/loader.py
+  - Dispatches by extension
+  - PDF path: native text → page OCR if sparse → optional image OCR append
+
+app/ingest/pipeline.py
+  - Size/type checks → extract → chunk → reset text index → upsert
+  - PDF: also builds CLIP figure-page index
+
+app/rag/chat.py
+  - Text retrieve (MiniLM)
+  - Image retrieve (CLIP) only if question looks visual
+    (keywords like figure, diagram, architecture, chart, …)
+  - Groq answer streaming
+  - Sources returned to UI for text footer
+
+app_ui.py
+  - Welcome + AskFileMessage (locks composer until upload)
+  - Indexes file, unlocks chat
+  - Streams answer
+  - Appends Sources as trailing markdown text
+  - Inline figure images only when CLIP returns hits
+  - /upload or /replace to swap document
+
+app/api.py
+  - POST /ingest (multipart file)
+  - POST /chat {question}
+  - GET /health
+
+
+--------------------------------------------------------------------------------
+7. VECTOR STORES
+--------------------------------------------------------------------------------
+
+Collection: pdf_chat
+  - Vectors: MiniLM (384-d)
+  - Payload: text, page_start, page_end, source_name, unit, chunk_id
+  - Distance: cosine
+  - Lifecycle: deleted + recreated on every successful ingest
+
+Collection: pdf_chat_images
+  - Vectors: CLIP ViT-B/32 (512-d)
+  - Payload: path (PNG on disk), page, source_name, kind
+    (figure_page | figure)
+  - Lifecycle: reset on ingest; empty for non-PDF files
+
+
+--------------------------------------------------------------------------------
+8. CONFIGURATION (.env)
+--------------------------------------------------------------------------------
+
+Required:
+  GROQ_API_KEY=...
+
+Common:
+  GROQ_MODEL=llama-3.3-70b-versatile
+  QDRANT_URL=http://localhost:6333
+  QDRANT_COLLECTION=pdf_chat
+  QDRANT_IMAGE_COLLECTION=pdf_chat_images
+
+  EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+  CHUNK_SIZE=1200
+  CHUNK_OVERLAP=150
+  TOP_K=5
+  MAX_FILE_MB=25
+
+  OCR_ENABLED=true
+  OCR_MIN_CHARS=40
+  OCR_DPI=200
+  OCR_EMBEDDED_IMAGES=true
+
+  IMAGE_INDEX_ENABLED=true
+  IMAGE_EMBEDDING_MODEL=Qdrant/clip-ViT-B-32-vision
+  CLIP_TEXT_EMBEDDING_MODEL=Qdrant/clip-ViT-B-32-text
+  IMAGE_TOP_K=2
+  IMAGE_MIN_SCORE=0.20
+  IMAGE_MAX_PAGES=80
+  IMAGE_MAX_FIGURES=40
+  IMAGE_INDEX_DPI=140
+
+
+--------------------------------------------------------------------------------
+9. HOW TO RUN
+--------------------------------------------------------------------------------
+
+From pdf-chat/:
+
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+  cp .env.example .env          # set GROQ_API_KEY
+  docker compose up -d          # Qdrant on :6333
+
+  PYTHONPATH=. chainlit run app_ui.py --host 0.0.0.0 --port 8000
+  # open http://localhost:8000
+
+Optional API:
+  PYTHONPATH=. uvicorn app.api:app --host 0.0.0.0 --port 8001
+
+Tests:
+  PYTHONPATH=. pytest -q
+
+
+--------------------------------------------------------------------------------
+10. SAMPLE DATA (data/samples/)
+--------------------------------------------------------------------------------
+
+  sample.txt                 ~450 lines — ops handbook
+  sample.md                  ~1400 lines — knowledge base
+  sample.csv                 ~420 rows — orders
+  sample.docx                ~500 paragraphs — vendor clauses
+  sample_inventory.pdf       multi-page inventory + figure page
+  attention_is_all_you_need.pdf
+  rag_survey.pdf
+  us_constitution.pdf
+
+Use these to test text RAG, CSV questions, DOCX clauses, and PDF figure queries
+(e.g. "Show me the architecture diagram" on the Attention paper).
+
+
+--------------------------------------------------------------------------------
+11. RUNTIME ARTIFACTS (SAFE TO DELETE)
+--------------------------------------------------------------------------------
+
+  data/uploads/*     uploaded user files
+  data/previews/*    rendered figure page PNGs for CLIP/UI
+  .files/*           Chainlit session upload scratch
+  data/qdrant/*      vector DB storage (wipes indexes if deleted)
+
+These are gitignored. Deleting them does not remove source code.
+
+
+--------------------------------------------------------------------------------
+12. FAILURE MODES / LIMITS
+--------------------------------------------------------------------------------
+
+  - Empty / image-only PDF with failed OCR → ingest error
+  - File larger than MAX_FILE_MB → rejected
+  - Missing GROQ_API_KEY → chat fails; UI warns on start
+  - Qdrant down → UI warns on start
+  - Large PDFs: text ingest is fairly fast; CLIP figure indexing adds time
+  - CLIP is good for “which page has the diagram?”, not deep visual QA
+  - One document only — uploading replaces previous index
+
+
+--------------------------------------------------------------------------------
+13. CHAT HISTORY
+--------------------------------------------------------------------------------
+
+  Before this change: each Groq call was single-turn (no memory of prior Q&A).
+
+  Now: Chainlit built-in `cl.chat_context` accumulates every user/assistant
+  message in the session. On each question we call:
+
+      history = cl.chat_context.to_openai()
+
+  and pass recent turns into Groq together with fresh RAG context.
+
+  - Tunable: CHAT_HISTORY_TURNS (default 6 pairs)
+  - Cleared on new document ingest (`cl.chat_context.clear()`)
+  - Follow-ups like "explain that more" can use prior turns
+
+
+--------------------------------------------------------------------------------
+14. MENTAL MODEL (ONE SENTENCE)
+--------------------------------------------------------------------------------
+
+  Document → extract text (+ OCR) → chunk → MiniLM → Qdrant text index;
+  PDF figure pages → render → CLIP → Qdrant image index;
+  Question + chat history (cl.chat_context) → retrieve text (± images) → Groq.
+
+
+================================================================================
+END OF APPLICATION UNDERSTANDING
+================================================================================
