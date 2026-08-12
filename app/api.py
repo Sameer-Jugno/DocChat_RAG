@@ -35,7 +35,7 @@ class ChatResponse(BaseModel):
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "supported": sorted(supported_list().split(", "))}
+    return {"status": "ok", "supported": supported_list()}
 
 
 @app.post("/ingest")
