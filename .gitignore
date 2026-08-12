@@ -1,4 +1,5 @@
 .env
+.venv
 .venv/
 __pycache__/
 *.py[cod]
@@ -7,8 +8,6 @@ __pycache__/
 .ruff_cache/
 
 # Runtime / local data
-data/previews/*
-!data/previews/.gitkeep
 data/uploads/*
 !data/uploads/.gitkeep
 data/qdrant/*

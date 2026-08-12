@@ -1,12 +1,12 @@
 # DocChat RAG
 
-Upload **one document** and chat with grounded answers (citations + optional figure pages).
+Upload **one document** and chat with grounded answers and citations.
 
 ## Features
 
 - Formats: PDF (text + OCR), TXT, MD, CSV, DOCX
-- Local embeddings (`all-MiniLM-L6-v2`) + CLIP figure-page retrieval
-- Qdrant (Docker) + Groq chat
+- Local embeddings (`all-MiniLM-L6-v2`) + Qdrant text retrieval
+- Groq chat
 - Chainlit UI with conversation history (`cl.chat_context`)
 - Optional FastAPI `/ingest` + `/chat`
 

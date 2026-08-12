@@ -8,11 +8,11 @@
 | **Decided** | No OCR in MVP (scanned PDFs unsupported) |
 | **Decided** | Lives in `pdf-chat/` — separate from CodeSage repo-RAG |
 | **Decided** | Formats now: `.pdf` (text + OCR), `.txt`, `.md`, `.csv`, `.docx`. Not yet: `.doc`, Excel, image-only uploads. |
-| **Decided** | PDF visuals: CLIP (`clip-ViT-B-32`) embeds page/figure images; query text retrieves images at runtime alongside text RAG. |
+| **Decided** | Text RAG only in this GitHub repo — no CLIP / figure-page image retrieval (kept in local `pdf-chat/`). |
 
 ## Deliberately not built
 
 - Multi-document libraries
 - Auth / multi-user
 - Reranker / Pinecone
-- OCR
+- CLIP figure-page retrieval (see local `pdf-chat/` for that variant)
