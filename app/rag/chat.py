@@ -1,26 +1,24 @@
-"""Retrieve + generate answers with Groq (text RAG + CLIP + chat history)."""
+"""Retrieve + generate answers with Groq (text RAG + chat history)."""
 
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from groq import Groq
 
 from app.config import get_settings
 from app.rag.embedder import embed_query
-from app.rag.image_store import RetrievedImage, search_images
 from app.rag.store import RetrievedChunk, search
 
 SYSTEM_PROMPT = """You are a helpful assistant that answers questions about a single uploaded document
 (PDF, text, Markdown, CSV, or Word .docx).
 
 Rules:
-- Use ONLY the provided context excerpts (and listed retrieved figures/pages), plus prior chat turns when the user refers to them.
+- Use ONLY the provided context excerpts, plus prior chat turns when the user refers to them.
 - If the context is insufficient, say you don't know based on the document.
 - Cite sources using the provided labels like [p.3], [sec.2], or [rows.1] when claiming facts.
-- When retrieved figures/pages are listed, mention them if relevant (e.g. "see figure on p.3").
 - Be concise and accurate. Do not invent content not present in the context.
 - Resolve follow-ups using conversation history (e.g. "what about that?", "explain more").
 """
@@ -38,24 +36,12 @@ def _cite_label(chunk: RetrievedChunk) -> str:
 class ChatResult:
     answer: str
     sources: list[RetrievedChunk]
-    images: list[RetrievedImage] = field(default_factory=list)
 
 
-def _format_context(
-    chunks: list[RetrievedChunk],
-    images: list[RetrievedImage] | None = None,
-) -> str:
+def _format_context(chunks: list[RetrievedChunk]) -> str:
     parts: list[str] = []
     for i, c in enumerate(chunks, start=1):
         parts.append(f"[{i}] ({c.source_name}, {_cite_label(c)})\n{c.text}")
-    if images:
-        lines = ["Retrieved visual matches (CLIP):"]
-        for img in images:
-            lines.append(
-                f"- {img.kind} on p.{img.page} of {img.source_name} "
-                f"(score {img.score:.3f})"
-            )
-        parts.append("\n".join(lines))
     return "\n\n".join(parts)
 
 
@@ -138,34 +124,6 @@ def retrieve(question: str, top_k: int | None = None) -> list[RetrievedChunk]:
     return search(vector, top_k=top_k)
 
 
-def retrieve_images(question: str) -> list[RetrievedImage]:
-    settings = get_settings()
-    if not settings.image_index_enabled:
-        return []
-    q = question.lower()
-    visual_hints = (
-        "figure",
-        "diagram",
-        "architecture",
-        "image",
-        "img",
-        "plot",
-        "chart",
-        "illustration",
-        "drawing",
-        "graph",
-        "schematic",
-        "screenshot",
-        "show me",
-        "looks like",
-        "picture",
-        "visual",
-    )
-    if not any(h in q for h in visual_hints):
-        return []
-    return search_images(question)
-
-
 def _client() -> Groq:
     settings = get_settings()
     if not settings.groq_api_key:
@@ -182,15 +140,13 @@ def answer(
 ) -> ChatResult:
     settings = get_settings()
     chunks = retrieve(question, top_k=top_k)
-    images = retrieve_images(question)
-    if not chunks and not images:
+    if not chunks:
         return ChatResult(
             answer="No document is indexed yet. Please upload a file first.",
             sources=[],
-            images=[],
         )
 
-    context = _format_context(chunks, images)
+    context = _format_context(chunks)
     messages = build_llm_messages(question, context, history=history)
 
     completion = _client().chat.completions.create(
@@ -199,25 +155,25 @@ def answer(
         temperature=0.2,
     )
     text = completion.choices[0].message.content or ""
-    return ChatResult(answer=text, sources=chunks, images=images)
+    return ChatResult(answer=text, sources=chunks)
 
 
 def stream_answer(
     question: str,
     top_k: int | None = None,
     history: Sequence[dict[str, Any]] | None = None,
-) -> tuple[list[RetrievedChunk], list[RetrievedImage], Iterator[str]]:
-    """Return text sources, image hits, and a streaming token iterator."""
+) -> tuple[list[RetrievedChunk], Iterator[str]]:
+    """Return text sources and a streaming token iterator."""
     settings = get_settings()
     chunks = retrieve(question, top_k=top_k)
-    images = retrieve_images(question)
-    if not chunks and not images:
+    if not chunks:
+
         def empty() -> Iterator[str]:
             yield "No document is indexed yet. Please upload a file first."
 
-        return [], [], empty()
+        return [], empty()
 
-    context = _format_context(chunks, images)
+    context = _format_context(chunks)
     messages = build_llm_messages(question, context, history=history)
 
     stream = _client().chat.completions.create(
@@ -233,4 +189,4 @@ def stream_answer(
             if delta:
                 yield delta
 
-    return chunks, images, tokens()
+    return chunks, tokens()

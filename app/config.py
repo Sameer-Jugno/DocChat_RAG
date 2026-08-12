@@ -21,7 +21,6 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str = ""
     qdrant_collection: str = "pdf_chat"
-    qdrant_image_collection: str = "pdf_chat_images"
 
     # MiniLM is typically faster to embed than bge-small for ingest
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
@@ -29,15 +28,6 @@ class Settings(BaseSettings):
     embedding_threads: int = 0  # 0 = use all CPU cores
     embedding_parallel: int = 0  # 0 = fastembed default; >0 = multi-proc
 
-    # CLIP multimodal image retrieval (query text ↔ page/figure images)
-    image_index_enabled: bool = True
-    image_embedding_model: str = "Qdrant/clip-ViT-B-32-vision"
-    clip_text_embedding_model: str = "Qdrant/clip-ViT-B-32-text"
-    image_top_k: int = 2
-    image_min_score: float = 0.20
-    image_max_pages: int = 80
-    image_max_figures: int = 40
-    image_index_dpi: int = 140
     chat_history_turns: int = 6  # prior user/assistant pairs sent to the LLM
 
     data_dir: Path = ROOT_DIR / "data"

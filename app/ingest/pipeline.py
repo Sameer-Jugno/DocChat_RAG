@@ -1,4 +1,4 @@
-"""End-to-end ingest: file → chunks (+ optional CLIP images) → Qdrant."""
+"""End-to-end ingest: file → chunks → Qdrant."""
 
 from __future__ import annotations
 
@@ -7,10 +7,8 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.ingest.chunker import chunk_pages
-from app.ingest.image_index import index_pdf_images
 from app.ingest.loader import extract_document, is_supported, supported_list
 from app.rag import store
-from app.rag import image_store
 
 
 @dataclass(frozen=True)
@@ -19,7 +17,6 @@ class IngestResult:
     pages: int
     chunks: int
     file_type: str
-    images: int = 0
 
 
 def ingest_file(file_path: Path, source_name: str | None = None) -> IngestResult:
@@ -27,7 +24,6 @@ def ingest_file(file_path: Path, source_name: str | None = None) -> IngestResult
     Replace the current index with this document (one file at a time).
 
     Supports: .pdf, .txt, .md, .csv, .docx
-    PDFs also get CLIP image indexing for figure/page retrieval.
     """
     settings = get_settings()
     path = Path(file_path)
@@ -64,38 +60,11 @@ def ingest_file(file_path: Path, source_name: str | None = None) -> IngestResult
     store.reset_collection()
     written = store.upsert_chunks(chunks)
 
-    images_written = 0
-    if path.suffix.lower() == ".pdf":
-        page_count = max((p.page_number for p in pages), default=0)
-        try:
-            import pymupdf
-
-            doc = pymupdf.open(str(path))
-            try:
-                page_count = max(page_count, doc.page_count)
-            finally:
-                doc.close()
-        except Exception:  # noqa: BLE001
-            pass
-        try:
-            images_written = index_pdf_images(path, name, page_count)
-        except Exception as exc:  # noqa: BLE001
-            # Text RAG should still work even if CLIP figure indexing fails
-            import logging
-
-            logging.getLogger("pdf_chat.pipeline").exception(
-                "Image index failed (continuing with text only): %s", exc
-            )
-            images_written = 0
-    else:
-        image_store.reset_image_collection()
-
     return IngestResult(
         source_name=name,
         pages=len(pages),
         chunks=written,
         file_type=path.suffix.lower(),
-        images=images_written,
     )
 
 

@@ -68,9 +68,8 @@ async def _index_file(dest: Path) -> bool:
     }.get(result.file_type, "sections")
     msg.content = (
         f"`{result.source_name}` ready "
-        f"({result.pages} {unit_word}, {result.chunks} text chunks"
-        + (f", {result.images} image vectors" if result.images else "")
-        + "). You can chat now."
+        f"({result.pages} {unit_word}, {result.chunks} text chunks). "
+        "You can chat now."
     )
     await msg.update()
     return True
@@ -162,11 +161,10 @@ async def on_message(message: cl.Message) -> None:
     reply = cl.Message(content="")
     await reply.send()
 
-    images = []
     try:
         # Chainlit built-in conversation history (OpenAI-compatible message list)
         history = cl.chat_context.to_openai()
-        sources, images, token_iter = await asyncio.to_thread(
+        sources, token_iter = await asyncio.to_thread(
             stream_answer, text, None, history
         )
         loop = asyncio.get_running_loop()
@@ -190,7 +188,7 @@ async def on_message(message: cl.Message) -> None:
         return
 
     # Sources only as trailing text — no side-panel elements
-    if sources or images:
+    if sources:
         lines = ["\n\n---\n**Sources**"]
         seen: set[tuple[str, int, int]] = set()
         for s in sources:
@@ -202,28 +200,6 @@ async def on_message(message: cl.Message) -> None:
                 f"- `{s.source_name}` ({_cite_label(s.page_start, s.page_end, s.unit)}) "
                 f"· score {s.score:.3f}"
             )
-        if images:
-            lines.append("\n**Figure pages**")
-            for img in images:
-                lines.append(f"- p.{img.page} · score {img.score:.3f}")
         await reply.stream_token("\n".join(lines))
-
-    # Inline figure page images only (not side panel)
-    if images:
-        elements = []
-        shown: set[int] = set()
-        for img in images:
-            if img.page in shown or not Path(img.path).is_file():
-                continue
-            shown.add(img.page)
-            elements.append(
-                cl.Image(
-                    name=f"Figure page {img.page}",
-                    path=img.path,
-                    display="inline",
-                    size="large",
-                )
-            )
-        reply.elements = elements
 
     await reply.update()
