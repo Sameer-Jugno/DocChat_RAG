@@ -1,0 +1,24 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime / local data
+data/previews/*
+!data/previews/.gitkeep
+data/uploads/*
+!data/uploads/.gitkeep
+data/qdrant/*
+!data/qdrant/.gitkeep
+.files/*
+!.files/.gitkeep
+
+# Chainlit local state (keep config)
+.chainlit/*
+!.chainlit/config.toml
+
+.DS_Store
+*.pyc
