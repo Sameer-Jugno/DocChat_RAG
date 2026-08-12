@@ -1,0 +1,37 @@
+[project]
+enable_telemetry = false
+session_timeout = 3600
+user_session_timeout = 3600
+cache = false
+allow_origins = ["*"]
+
+[features]
+unsafe_allow_html = false
+latex = false
+user_message_autoscroll = true
+auto_tag_thread = true
+
+# Keep composer free for chat after unlock; PDF replace via /upload AskFile flow
+[features.spontaneous_file_upload]
+enabled = false
+accept = [
+  "application/pdf",
+  "application/x-pdf",
+  "text/plain",
+  "text/markdown",
+  "text/csv",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/octet-stream",
+]
+max_files = 1
+max_size_mb = 25
+
+[UI]
+name = "PDF Chat"
+description = "Upload one PDF and chat with grounded answers"
+default_collapse_content = true
+cot = "hidden"
+default_theme = "light"
+
+[meta]
+generated_by = "2.11.1"
