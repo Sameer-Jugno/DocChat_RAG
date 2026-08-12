@@ -1,0 +1,453 @@
+ACME PLATFORM OPERATIONS HANDBOOK
+Version 3.2 — Internal Use Only
+Last updated: 2026-08-01
+
+1. INTRODUCTION
+This handbook documents the Acme Platform services, on-call practices,
+deployment standards, and incident response procedures used by Platform Engineering.
+
+10. SERVICE CATALOG
+  - api-gateway: edge routing, TLS termination, rate limiting
+    Runbook note 10: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - user-service: accounts, authn/authz, session store
+    Runbook note 13: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - billing-service: invoices, payment intents, tax calculation
+    Runbook note 16: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - notify-service: email, SMS, push notifications
+    Runbook note 19: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - search-service: product index, autocomplete, filters
+    Runbook note 22: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - analytics-pipeline: event ingest, warehouse sync, dashboards
+    Runbook note 25: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+
+11. ENVIRONMENTS
+  - dev: shared sandbox, no customer data
+    Runbook note 30: verify health checks before deploy.
+    Owner rotation week 8: on-call engineer.
+  - staging: production-like, synthetic + anonymized data
+    Runbook note 33: verify health checks before deploy.
+    Owner rotation week 11: on-call engineer.
+  - prod: multi-region active-active (us-east, eu-west)
+    Runbook note 36: verify health checks before deploy.
+    Owner rotation week 2: on-call engineer.
+
+12. SLOs
+  - api-gateway availability: 99.95%
+    Runbook note 41: verify health checks before deploy.
+    Owner rotation week 7: on-call engineer.
+  - user-service p99 latency: < 250ms
+    Runbook note 44: verify health checks before deploy.
+    Owner rotation week 10: on-call engineer.
+  - billing-service success rate: 99.9%
+    Runbook note 47: verify health checks before deploy.
+    Owner rotation week 1: on-call engineer.
+  - search-service p95 latency: < 120ms
+    Runbook note 50: verify health checks before deploy.
+    Owner rotation week 4: on-call engineer.
+
+13. SERVICE CATALOG
+  - api-gateway: edge routing, TLS termination, rate limiting
+    Runbook note 55: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - user-service: accounts, authn/authz, session store
+    Runbook note 58: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - billing-service: invoices, payment intents, tax calculation
+    Runbook note 61: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - notify-service: email, SMS, push notifications
+    Runbook note 64: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - search-service: product index, autocomplete, filters
+    Runbook note 67: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - analytics-pipeline: event ingest, warehouse sync, dashboards
+    Runbook note 70: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+
+14. ENVIRONMENTS
+  - dev: shared sandbox, no customer data
+    Runbook note 75: verify health checks before deploy.
+    Owner rotation week 5: on-call engineer.
+  - staging: production-like, synthetic + anonymized data
+    Runbook note 78: verify health checks before deploy.
+    Owner rotation week 8: on-call engineer.
+  - prod: multi-region active-active (us-east, eu-west)
+    Runbook note 81: verify health checks before deploy.
+    Owner rotation week 11: on-call engineer.
+
+15. SLOs
+  - api-gateway availability: 99.95%
+    Runbook note 86: verify health checks before deploy.
+    Owner rotation week 4: on-call engineer.
+  - user-service p99 latency: < 250ms
+    Runbook note 89: verify health checks before deploy.
+    Owner rotation week 7: on-call engineer.
+  - billing-service success rate: 99.9%
+    Runbook note 92: verify health checks before deploy.
+    Owner rotation week 10: on-call engineer.
+  - search-service p95 latency: < 120ms
+    Runbook note 95: verify health checks before deploy.
+    Owner rotation week 1: on-call engineer.
+
+16. SERVICE CATALOG
+  - api-gateway: edge routing, TLS termination, rate limiting
+    Runbook note 100: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - user-service: accounts, authn/authz, session store
+    Runbook note 103: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - billing-service: invoices, payment intents, tax calculation
+    Runbook note 106: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - notify-service: email, SMS, push notifications
+    Runbook note 109: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - search-service: product index, autocomplete, filters
+    Runbook note 112: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - analytics-pipeline: event ingest, warehouse sync, dashboards
+    Runbook note 115: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+
+17. ENVIRONMENTS
+  - dev: shared sandbox, no customer data
+    Runbook note 120: verify health checks before deploy.
+    Owner rotation week 2: on-call engineer.
+  - staging: production-like, synthetic + anonymized data
+    Runbook note 123: verify health checks before deploy.
+    Owner rotation week 5: on-call engineer.
+  - prod: multi-region active-active (us-east, eu-west)
+    Runbook note 126: verify health checks before deploy.
+    Owner rotation week 8: on-call engineer.
+
+18. SLOs
+  - api-gateway availability: 99.95%
+    Runbook note 131: verify health checks before deploy.
+    Owner rotation week 1: on-call engineer.
+  - user-service p99 latency: < 250ms
+    Runbook note 134: verify health checks before deploy.
+    Owner rotation week 4: on-call engineer.
+  - billing-service success rate: 99.9%
+    Runbook note 137: verify health checks before deploy.
+    Owner rotation week 7: on-call engineer.
+  - search-service p95 latency: < 120ms
+    Runbook note 140: verify health checks before deploy.
+    Owner rotation week 10: on-call engineer.
+
+19. SERVICE CATALOG
+  - api-gateway: edge routing, TLS termination, rate limiting
+    Runbook note 145: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - user-service: accounts, authn/authz, session store
+    Runbook note 148: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - billing-service: invoices, payment intents, tax calculation
+    Runbook note 151: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - notify-service: email, SMS, push notifications
+    Runbook note 154: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - search-service: product index, autocomplete, filters
+    Runbook note 157: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - analytics-pipeline: event ingest, warehouse sync, dashboards
+    Runbook note 160: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+
+20. ENVIRONMENTS
+  - dev: shared sandbox, no customer data
+    Runbook note 165: verify health checks before deploy.
+    Owner rotation week 11: on-call engineer.
+  - staging: production-like, synthetic + anonymized data
+    Runbook note 168: verify health checks before deploy.
+    Owner rotation week 2: on-call engineer.
+  - prod: multi-region active-active (us-east, eu-west)
+    Runbook note 171: verify health checks before deploy.
+    Owner rotation week 5: on-call engineer.
+
+21. SLOs
+  - api-gateway availability: 99.95%
+    Runbook note 176: verify health checks before deploy.
+    Owner rotation week 10: on-call engineer.
+  - user-service p99 latency: < 250ms
+    Runbook note 179: verify health checks before deploy.
+    Owner rotation week 1: on-call engineer.
+  - billing-service success rate: 99.9%
+    Runbook note 182: verify health checks before deploy.
+    Owner rotation week 4: on-call engineer.
+  - search-service p95 latency: < 120ms
+    Runbook note 185: verify health checks before deploy.
+    Owner rotation week 7: on-call engineer.
+
+22. SERVICE CATALOG
+  - api-gateway: edge routing, TLS termination, rate limiting
+    Runbook note 190: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - user-service: accounts, authn/authz, session store
+    Runbook note 193: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - billing-service: invoices, payment intents, tax calculation
+    Runbook note 196: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - notify-service: email, SMS, push notifications
+    Runbook note 199: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - search-service: product index, autocomplete, filters
+    Runbook note 202: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - analytics-pipeline: event ingest, warehouse sync, dashboards
+    Runbook note 205: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+
+23. ENVIRONMENTS
+  - dev: shared sandbox, no customer data
+    Runbook note 210: verify health checks before deploy.
+    Owner rotation week 8: on-call engineer.
+  - staging: production-like, synthetic + anonymized data
+    Runbook note 213: verify health checks before deploy.
+    Owner rotation week 11: on-call engineer.
+  - prod: multi-region active-active (us-east, eu-west)
+    Runbook note 216: verify health checks before deploy.
+    Owner rotation week 2: on-call engineer.
+
+24. SLOs
+  - api-gateway availability: 99.95%
+    Runbook note 221: verify health checks before deploy.
+    Owner rotation week 7: on-call engineer.
+  - user-service p99 latency: < 250ms
+    Runbook note 224: verify health checks before deploy.
+    Owner rotation week 10: on-call engineer.
+  - billing-service success rate: 99.9%
+    Runbook note 227: verify health checks before deploy.
+    Owner rotation week 1: on-call engineer.
+  - search-service p95 latency: < 120ms
+    Runbook note 230: verify health checks before deploy.
+    Owner rotation week 4: on-call engineer.
+
+25. SERVICE CATALOG
+  - api-gateway: edge routing, TLS termination, rate limiting
+    Runbook note 235: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - user-service: accounts, authn/authz, session store
+    Runbook note 238: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - billing-service: invoices, payment intents, tax calculation
+    Runbook note 241: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - notify-service: email, SMS, push notifications
+    Runbook note 244: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - search-service: product index, autocomplete, filters
+    Runbook note 247: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - analytics-pipeline: event ingest, warehouse sync, dashboards
+    Runbook note 250: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+
+26. ENVIRONMENTS
+  - dev: shared sandbox, no customer data
+    Runbook note 255: verify health checks before deploy.
+    Owner rotation week 5: on-call engineer.
+  - staging: production-like, synthetic + anonymized data
+    Runbook note 258: verify health checks before deploy.
+    Owner rotation week 8: on-call engineer.
+  - prod: multi-region active-active (us-east, eu-west)
+    Runbook note 261: verify health checks before deploy.
+    Owner rotation week 11: on-call engineer.
+
+27. SLOs
+  - api-gateway availability: 99.95%
+    Runbook note 266: verify health checks before deploy.
+    Owner rotation week 4: on-call engineer.
+  - user-service p99 latency: < 250ms
+    Runbook note 269: verify health checks before deploy.
+    Owner rotation week 7: on-call engineer.
+  - billing-service success rate: 99.9%
+    Runbook note 272: verify health checks before deploy.
+    Owner rotation week 10: on-call engineer.
+  - search-service p95 latency: < 120ms
+    Runbook note 275: verify health checks before deploy.
+    Owner rotation week 1: on-call engineer.
+
+28. SERVICE CATALOG
+  - api-gateway: edge routing, TLS termination, rate limiting
+    Runbook note 280: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - user-service: accounts, authn/authz, session store
+    Runbook note 283: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - billing-service: invoices, payment intents, tax calculation
+    Runbook note 286: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - notify-service: email, SMS, push notifications
+    Runbook note 289: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - search-service: product index, autocomplete, filters
+    Runbook note 292: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - analytics-pipeline: event ingest, warehouse sync, dashboards
+    Runbook note 295: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+
+29. ENVIRONMENTS
+  - dev: shared sandbox, no customer data
+    Runbook note 300: verify health checks before deploy.
+    Owner rotation week 2: on-call engineer.
+  - staging: production-like, synthetic + anonymized data
+    Runbook note 303: verify health checks before deploy.
+    Owner rotation week 5: on-call engineer.
+  - prod: multi-region active-active (us-east, eu-west)
+    Runbook note 306: verify health checks before deploy.
+    Owner rotation week 8: on-call engineer.
+
+30. SLOs
+  - api-gateway availability: 99.95%
+    Runbook note 311: verify health checks before deploy.
+    Owner rotation week 1: on-call engineer.
+  - user-service p99 latency: < 250ms
+    Runbook note 314: verify health checks before deploy.
+    Owner rotation week 4: on-call engineer.
+  - billing-service success rate: 99.9%
+    Runbook note 317: verify health checks before deploy.
+    Owner rotation week 7: on-call engineer.
+  - search-service p95 latency: < 120ms
+    Runbook note 320: verify health checks before deploy.
+    Owner rotation week 10: on-call engineer.
+
+31. SERVICE CATALOG
+  - api-gateway: edge routing, TLS termination, rate limiting
+    Runbook note 325: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - user-service: accounts, authn/authz, session store
+    Runbook note 328: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - billing-service: invoices, payment intents, tax calculation
+    Runbook note 331: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - notify-service: email, SMS, push notifications
+    Runbook note 334: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - search-service: product index, autocomplete, filters
+    Runbook note 337: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - analytics-pipeline: event ingest, warehouse sync, dashboards
+    Runbook note 340: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+
+32. ENVIRONMENTS
+  - dev: shared sandbox, no customer data
+    Runbook note 345: verify health checks before deploy.
+    Owner rotation week 11: on-call engineer.
+  - staging: production-like, synthetic + anonymized data
+    Runbook note 348: verify health checks before deploy.
+    Owner rotation week 2: on-call engineer.
+  - prod: multi-region active-active (us-east, eu-west)
+    Runbook note 351: verify health checks before deploy.
+    Owner rotation week 5: on-call engineer.
+
+33. SLOs
+  - api-gateway availability: 99.95%
+    Runbook note 356: verify health checks before deploy.
+    Owner rotation week 10: on-call engineer.
+  - user-service p99 latency: < 250ms
+    Runbook note 359: verify health checks before deploy.
+    Owner rotation week 1: on-call engineer.
+  - billing-service success rate: 99.9%
+    Runbook note 362: verify health checks before deploy.
+    Owner rotation week 4: on-call engineer.
+  - search-service p95 latency: < 120ms
+    Runbook note 365: verify health checks before deploy.
+    Owner rotation week 7: on-call engineer.
+
+34. SERVICE CATALOG
+  - api-gateway: edge routing, TLS termination, rate limiting
+    Runbook note 370: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - user-service: accounts, authn/authz, session store
+    Runbook note 373: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - billing-service: invoices, payment intents, tax calculation
+    Runbook note 376: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - notify-service: email, SMS, push notifications
+    Runbook note 379: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - search-service: product index, autocomplete, filters
+    Runbook note 382: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - analytics-pipeline: event ingest, warehouse sync, dashboards
+    Runbook note 385: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+
+35. ENVIRONMENTS
+  - dev: shared sandbox, no customer data
+    Runbook note 390: verify health checks before deploy.
+    Owner rotation week 8: on-call engineer.
+  - staging: production-like, synthetic + anonymized data
+    Runbook note 393: verify health checks before deploy.
+    Owner rotation week 11: on-call engineer.
+  - prod: multi-region active-active (us-east, eu-west)
+    Runbook note 396: verify health checks before deploy.
+    Owner rotation week 2: on-call engineer.
+
+36. SLOs
+  - api-gateway availability: 99.95%
+    Runbook note 401: verify health checks before deploy.
+    Owner rotation week 7: on-call engineer.
+  - user-service p99 latency: < 250ms
+    Runbook note 404: verify health checks before deploy.
+    Owner rotation week 10: on-call engineer.
+  - billing-service success rate: 99.9%
+    Runbook note 407: verify health checks before deploy.
+    Owner rotation week 1: on-call engineer.
+  - search-service p95 latency: < 120ms
+    Runbook note 410: verify health checks before deploy.
+    Owner rotation week 4: on-call engineer.
+
+37. SERVICE CATALOG
+  - api-gateway: edge routing, TLS termination, rate limiting
+    Runbook note 415: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - user-service: accounts, authn/authz, session store
+    Runbook note 418: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+  - billing-service: invoices, payment intents, tax calculation
+    Runbook note 421: verify health checks before deploy.
+    Owner rotation week 3: on-call engineer.
+  - notify-service: email, SMS, push notifications
+    Runbook note 424: verify health checks before deploy.
+    Owner rotation week 6: on-call engineer.
+  - search-service: product index, autocomplete, filters
+    Runbook note 427: verify health checks before deploy.
+    Owner rotation week 9: on-call engineer.
+  - analytics-pipeline: event ingest, warehouse sync, dashboards
+    Runbook note 430: verify health checks before deploy.
+    Owner rotation week 12: on-call engineer.
+
+38. ENVIRONMENTS
+  - dev: shared sandbox, no customer data
+    Runbook note 435: verify health checks before deploy.
+    Owner rotation week 5: on-call engineer.
+  - staging: production-like, synthetic + anonymized data
+    Runbook note 438: verify health checks before deploy.
+    Owner rotation week 8: on-call engineer.
+  - prod: multi-region active-active (us-east, eu-west)
+    Runbook note 441: verify health checks before deploy.
+    Owner rotation week 11: on-call engineer.
+
+39. SLOs
+  - api-gateway availability: 99.95%
+    Runbook note 446: verify health checks before deploy.
+    Owner rotation week 4: on-call engineer.
+  - user-service p99 latency: < 250ms
+    Runbook note 449: verify health checks before deploy.
+    Owner rotation week 7: on-call engineer.
+
+END OF HANDBOOK
